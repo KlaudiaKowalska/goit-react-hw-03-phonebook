@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PropTypes from "prop-types"; // Importowanie PropTypes
 import { nanoid } from "nanoid";
 import styles from "./ContactForm.module.scss";
 
@@ -9,7 +10,20 @@ const ContactForm = ({ contacts, addContact }) => {
   });
 
   const handleChange = (e) => {
-    setState({ ...state, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "number") {
+      const filteredValue = value.replace(/[^\d+\-().\s]/g, "");
+      setState((prevState) => ({ ...prevState, [name]: filteredValue }));
+    } else {
+      setState((prevState) => ({ ...prevState, [name]: value }));
+    }
+  };
+
+  const validatePhoneNumber = (number) => {
+    const phoneNumberPattern =
+      /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
+    return phoneNumberPattern.test(number);
   };
 
   const handleSubmit = (e) => {
@@ -24,7 +38,16 @@ const ContactForm = ({ contacts, addContact }) => {
       return;
     }
 
-    if (state.name.trim() === "" || state.number.trim() === "") return;
+    if (state.name.trim() === "" || state.number.trim() === "") {
+      alert("Name and number cannot be empty.");
+      return;
+    }
+
+    if (!validatePhoneNumber(state.number)) {
+      alert("Invalid phone number format.");
+      return;
+    }
+
     const newContact = {
       id: nanoid(),
       name: state.name.trim(),
@@ -53,6 +76,7 @@ const ContactForm = ({ contacts, addContact }) => {
         name="number"
         value={state.number}
         onChange={handleChange}
+        inputMode="numeric"
         pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
         title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
         placeholder="Phone Number"
@@ -63,6 +87,17 @@ const ContactForm = ({ contacts, addContact }) => {
       </button>
     </form>
   );
+};
+
+ContactForm.propTypes = {
+  contacts: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      number: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
+  addContact: PropTypes.func.isRequired,
 };
 
 export default ContactForm;
